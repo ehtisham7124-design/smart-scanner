@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Smart Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --blue-deep: #0A1628;
+    --blue-primary: #1565C0;
+    --blue-bright: #1E88E5;
+    --blue-light: #42A5F5;
+    --blue-pale: #E3F2FD;
+    --blue-mid: #1976D2;
+    --white: #FFFFFF;
+    --gray-100: #F0F4F8;
+    --gray-200: #DDEAF5;
+    --gray-400: #90A4AE;
+    --gray-600: #546E7A;
+    --success: #00C853;
+    --shadow-sm: 0 2px 8px rgba(21,101,192,0.10);
+    --shadow-md: 0 6px 24px rgba(21,101,192,0.16);
+    --shadow-lg: 0 12px 40px rgba(21,101,192,0.22);
+    --radius: 20px;
+    --radius-sm: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray-100);
+    color: var(--blue-deep);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, var(--blue-deep) 0%, var(--blue-primary) 100%);
+    padding: 52px 24px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: -30px;
+    width: 200px; height: 200px;
+    background: rgba(66,165,245,0.10);
+    border-radius: 50%;
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .app-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.5px;
+  }
+  .app-title span { color: var(--blue-light); }
+  .header-icon {
+    width: 42px; height: 42px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .header-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 6px;
+    font-weight: 400;
+  }
+
+  /* ── SCAN BUTTON (Hero) ── */
+  .scan-hero {
+    margin: -1px 24px 0;
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    z-index: 10;
+    margin-top: 20px;
+  }
+  .scan-circle {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue-primary), var(--blue-light));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 30px rgba(21,101,192,0.35);
+    cursor: pointer;
+    transition: transform 0.18s, box-shadow 0.18s;
+    position: relative;
+  }
+  .scan-circle:active { transform: scale(0.94); box-shadow: 0 4px 16px rgba(21,101,192,0.25); }
+  .scan-circle svg { width: 48px; height: 48px; fill: white; }
+  .scan-ring {
+    position: absolute;
+    width: 126px; height: 126px;
+    border-radius: 50%;
+    border: 2px solid rgba(21,101,192,0.18);
+    animation: pulse-ring 2s infinite;
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.22); opacity: 0; }
+  }
+  .scan-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--blue-primary);
+  }
+  .scan-sub { font-size: 12px; color: var(--gray-400); }
+
+  /* ── HIDDEN INPUT ── */
+  #cameraInput { display: none; }
+
+  /* ── QUICK ACTIONS ── */
+  .section { padding: 24px 24px 0; }
+  .section-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+  .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .action-card {
+    background: var(--white);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 1.5px solid transparent;
+  }
+  .action-card:active { transform: scale(0.96); }
+  .action-card.blue { border-color: var(--blue-pale); }
+  .action-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .action-icon.pdf { background: #FFF3E0; }
+  .action-icon.share { background: #E8F5E9; }
+  .action-icon.gallery { background: #F3E5F5; }
+  .action-icon.crop { background: #E3F2FD; }
+  .action-text { font-size: 13px; font-weight: 600; color: var(--blue-deep); line-height: 1.3; }
+  .action-sub { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+  /* ── SCANNED DOCS LIST ── */
+  .docs-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 100px; }
+  .doc-card {
+    background: var(--white);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: var(--shadow-sm);
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .doc-thumb {
+    width: 52px; height: 66px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1.5px solid var(--gray-200);
+    flex-shrink: 0;
+    background: var(--gray-100);
+  }
+  .doc-info { flex: 1; min-width: 0; }
+  .doc-name {
+    font-weight: 600; font-size: 14px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .doc-meta { font-size: 11px; color: var(--gray-400); margin-top: 3px; }
+  .doc-actions { display: flex; gap: 8px; }
+  .doc-btn {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: transform 0.15s;
+  }
+  .doc-btn:active { transform: scale(0.90); }
+  .doc-btn.pdf-btn { background: #FFF3E0; }
+  .doc-btn.share-btn { background: #E8F5E9; }
+  .doc-btn.del-btn { background: #FFEBEE; }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: var(--white);
+    border-top: 1px solid var(--gray-200);
+    display: flex;
+    padding: 10px 0 18px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+    z-index: 100;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--gray-400);
+    transition: color 0.15s;
+  }
+  .nav-item.active { color: var(--blue-primary); }
+  .nav-item svg { width: 22px; height: 22px; }
+
+  /* ── PREVIEW MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,22,40,0.82);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-sheet {
+    background: var(--white);
+    border-radius: 28px 28px 0 0;
+    width: 100%; max-width: 430px;
+    padding: 20px 24px 40px;
+    animation: sheetUp 0.3s ease;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .sheet-handle {
+    width: 40px; height: 4px;
+    background: var(--gray-200);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+  .preview-img {
+    width: 100%; border-radius: 14px;
+    border: 1px solid var(--gray-200);
+    max-height: 340px; object-fit: contain;
+    background: var(--gray-100);
+  }
+  .filter-row {
+    display: flex; gap: 10px; margin: 16px 0;
+    overflow-x: auto; padding-bottom: 4px;
+  }
+  .filter-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1.5px solid var(--gray-200);
+    background: var(--white);
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    color: var(--gray-600);
+    transition: all 0.15s;
+  }
+  .filter-btn.active {
+    background: var(--blue-primary);
+    border-color: var(--blue-primary);
+    color: white;
+  }
+  .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .sheet-btn {
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .sheet-btn:active { transform: scale(0.96); opacity: 0.85; }
+  .sheet-btn.primary { background: linear-gradient(135deg, var(--blue-primary), var(--blue-light)); color: white; }
+  .sheet-btn.secondary { background: var(--blue-pale); color: var(--blue-primary); }
+  .sheet-btn.green { background: #E8F5E9; color: #2E7D32; }
+  .sheet-btn.orange { background: #FFF3E0; color: #E65100; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--blue-deep);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 13px; font-weight: 600;
+    z-index: 500;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--gray-400);
+  }
+  .empty-state .emoji { font-size: 52px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* ── LOADING OVERLAY ── */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,22,40,0.7);
+    z-index: 300;
+    display: none;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px;
+  }
+  .loading-overlay.open { display: flex; }
+  .spinner {
+    width: 52px; height: 52px;
+    border: 4px solid rgba(255,255,255,0.2);
+    border-top-color: var(--blue-light);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: white; font-size: 15px; font-weight: 600; }
+
+  /* Canvas (hidden, used for processing) */
+  #processCanvas { display: none; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="app-title">Smart<span>Scanner</span></div>
+      <div class="header-sub">Professional document scanning</div>
+    </div>
+    <div class="header-icon">📄</div>
+  </div>
+</div>
+
+<!-- SCAN HERO -->
+<div class="scan-hero">
+  <div class="scan-ring"></div>
+  <div class="scan-circle" onclick="triggerCamera()">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4zm0 1.8a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
+      <path d="M9 2L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/>
+    </svg>
+  </div>
+  <div class="scan-label">Tap to Scan Document</div>
+  <div class="scan-sub">Camera opens automatically</div>
+</div>
+<input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleCapture(event)">
+
+<!-- QUICK ACTIONS -->
+<div class="section" style="margin-top:24px;">
+  <div class="section-title">Quick Actions</div>
+  <div class="actions-grid">
+    <div class="action-card blue" onclick="triggerCamera()">
+      <div class="action-icon crop">📸</div>
+      <div>
+        <div class="action-text">Scan New</div>
+        <div class="action-sub">Open camera</div>
+      </div>
+    </div>
+    <div class="action-card" onclick="triggerGallery()">
+      <div class="action-icon gallery">🖼️</div>
+      <div>
+        <div class="action-text">From Gallery</div>
+        <div class="action-sub">Pick image</div>
+      </div>
+    </div>
+    <div class="action-card" onclick="exportAllPDF()">
+      <div class="action-icon pdf">📕</div>
+      <div>
+        <div class="action-text">Export All PDF</div>
+        <div class="action-sub">All docs → 1 PDF</div>
+      </div>
+    </div>
+    <div class="action-card" onclick="shareAll()">
+      <div class="action-icon share">📤</div>
+      <div>
+        <div class="action-text">Share All</div>
+        <div class="action-sub">WhatsApp / Email</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DOCUMENTS LIST -->
+<div class="section" style="margin-top:24px;">
+  <div class="section-title">Scanned Documents</div>
+  <div class="docs-list" id="docsList">
+    <div class="empty-state">
+      <div class="emoji">📂</div>
+      <p>No documents yet.<br>Tap the camera button to scan your first document!</p>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    Home
+  </div>
+  <div class="nav-item" onclick="triggerCamera()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4zm0 1.8a5 5 0 1 1 0-10 5 5 0 0 1 0 10zM9 2L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9z"/></svg>
+    Scan
+  </div>
+  <div class="nav-item" onclick="showToast('PDF feature ready!')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
+    PDFs
+  </div>
+  <div class="nav-item" onclick="showToast('Settings coming soon!')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+    Settings
+  </div>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div class="modal-overlay" id="previewModal" onclick="closeModalOutside(event)">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <img id="previewImg" class="preview-img" src="" alt="Preview">
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="applyFilter('original', this)">Original</button>
+      <button class="filter-btn" onclick="applyFilter('bw', this)">B&W Clean</button>
+      <button class="filter-btn" onclick="applyFilter('enhanced', this)">Enhanced</button>
+      <button class="filter-btn" onclick="applyFilter('grayscale', this)">Grayscale</button>
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-btn primary" onclick="saveDocFromModal()">💾 Save Doc</button>
+      <button class="sheet-btn secondary" onclick="downloadPDFFromModal()">📕 Save as PDF</button>
+      <button class="sheet-btn green" onclick="shareWhatsApp()">💬 WhatsApp</button>
+      <button class="sheet-btn orange" onclick="shareEmail()">📧 Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Processing document...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden Canvas -->
+<canvas id="processCanvas"></canvas>
+
+<script>
+  // ─── STATE ───────────────────────────────────────────────
+  let documents = [];
+  let currentImageData = null;  // raw original base64
+  let currentFiltered = null;   // currently filtered base64
+  let currentFilter = 'original';
+  let galleryMode = false;
+
+  // ─── CAMERA / GALLERY ────────────────────────────────────
+  function triggerCamera() {
+    galleryMode = false;
+    const input = document.getElementById('cameraInput');
+    input.removeAttribute('capture');
+    input.setAttribute('capture', 'environment');
+    input.value = '';
+    input.click();
+  }
+
+  function triggerGallery() {
+    galleryMode = true;
+    const input = document.getElementById('cameraInput');
+    input.removeAttribute('capture');
+    input.value = '';
+    input.click();
+  }
+
+  function handleCapture(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    showLoading();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      currentImageData = e.target.result;
+      currentFilter = 'original';
+      currentFiltered = currentImageData;
+      setTimeout(() => {
+        hideLoading();
+        openPreviewModal(currentImageData);
+      }, 800);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ─── IMAGE PROCESSING ────────────────────────────────────
+  function processImage(src, filterType, callback) {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById('processCanvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      if (filterType === 'bw') {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const avg = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+          const val = avg > 128 ? Math.min(255, avg * 1.2) : Math.max(0, avg * 0.6);
+          data[i] = data[i+1] = data[i+2] = val;
+        }
+        ctx.putImageData(imageData, 0, 0);
+      } else if (filterType === 'enhanced') {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          data[i]   = Math.min(255, data[i] * 1.15 + 10);
+          data[i+1] = Math.min(255, data[i+1] * 1.10 + 8);
+          data[i+2] = Math.min(255, data[i+2] * 1.05);
+        }
+        ctx.putImageData(imageData, 0, 0);
+      } else if (filterType === 'grayscale') {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const avg = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+          data[i] = data[i+1] = data[i+2] = avg;
+        }
+        ctx.putImageData(imageData, 0, 0);
+      }
+      callback(canvas.toDataURL('image/jpeg', 0.92));
+    };
+    img.src = src;
+  }
+
+  function applyFilter(type, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = type;
+    showLoading();
+    processImage(currentImageData, type, (result) => {
+      currentFiltered = result;
+      document.getElementById('previewImg').src = result;
+      hideLoading();
+    });
+  }
+
+  // ─── MODAL ───────────────────────────────────────────────
+  function openPreviewModal(src) {
+    document.getElementById('previewImg').src = src;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.filter-btn').classList.add('active');
+    document.getElementById('previewModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('previewModal').classList.remove('open');
+  }
+
+  function closeModalOutside(e) {
+    if (e.target === document.getElementById('previewModal')) closeModal();
+  }
+
+  // ─── SAVE DOC ────────────────────────────────────────────
+  function saveDocFromModal() {
+    const now = new Date();
+    const name = `Doc_${now.getDate()}${now.toLocaleString('default',{month:'short'})}_${now.getHours()}${now.getMinutes().toString().padStart(2,'0')}`;
+    const size = Math.round((currentFiltered.length * 0.75) / 1024);
+    documents.unshift({ id: Date.now(), name, data: currentFiltered, filter: currentFilter, size, date: now.toLocaleDateString() });
+    renderDocs();
+    closeModal();
+    showToast('✅ Document saved!');
+  }
+
+  // ─── RENDER DOCS ─────────────────────────────────────────
+  function renderDocs() {
+    const list = document.getElementById('docsList');
+    if (documents.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div class="emoji">📂</div><p>No documents yet.<br>Tap the camera button to scan your first document!</p></div>`;
+      return;
+    }
+    list.innerHTML = documents.map(doc => `
+      <div class="doc-card" id="doc-${doc.id}">
+        <img class="doc-thumb" src="${doc.data}" alt="${doc.name}">
+        <div class="doc-info">
+          <div class="doc-name">${doc.name}</div>
+          <div class="doc-meta">${doc.date} · ~${doc.size} KB · ${doc.filter}</div>
+        </div>
+        <div class="doc-actions">
+          <button class="doc-btn pdf-btn" onclick="downloadPDF('${doc.id}')" title="Save as PDF">📕</button>
+          <button class="doc-btn share-btn" onclick="shareDoc('${doc.id}')" title="Share">📤</button>
+          <button class="doc-btn del-btn" onclick="deleteDoc('${doc.id}')" title="Delete">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ─── DELETE ──────────────────────────────────────────────
+  function deleteDoc(id) {
+    documents = documents.filter(d => d.id != id);
+    renderDocs();
+    showToast('🗑️ Document deleted');
+  }
+
+  // ─── PDF GENERATION ──────────────────────────────────────
+  function downloadPDF(id) {
+    const doc = documents.find(d => d.id == id);
+    if (!doc) return;
+    generatePDFFromImage(doc.data, doc.name);
+  }
+
+  function downloadPDFFromModal() {
+    const now = new Date();
+    const name = `SmartScan_${now.getTime()}`;
+    generatePDFFromImage(currentFiltered, name);
+  }
+
+  function generatePDFFromImage(imgData, name) {
+    showLoading();
+    setTimeout(() => {
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageW = 210, pageH = 297;
+        const margin = 10;
+        const imgW = pageW - margin * 2;
+        const imgH = pageH - margin * 2;
+        pdf.addImage(imgData, 'JPEG', margin, margin, imgW, imgH, undefined, 'FAST');
+        pdf.save(`${name}.pdf`);
+        hideLoading();
+        showToast('📕 PDF saved!');
+      } catch (err) {
+        hideLoading();
+        showToast('⚠️ PDF error. Try again.');
+      }
+    }, 600);
+  }
+
+  function exportAllPDF() {
+    if (documents.length === 0) { showToast('No documents to export!'); return; }
+    showLoading();
+    setTimeout(() => {
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageW = 210, pageH = 297, margin = 10;
+        documents.forEach((doc, i) => {
+          if (i > 0) pdf.addPage();
+          pdf.addImage(doc.data, 'JPEG', margin, margin, pageW - margin*2, pageH - margin*2, undefined, 'FAST');
+        });
+        pdf.save('SmartScanner_All.pdf');
+        hideLoading();
+        showToast(`📕 ${documents.length} pages exported!`);
+      } catch (err) {
+        hideLoading();
+        showToast('⚠️ Export failed. Try again.');
+      }
+    }, 800);
+  }
+
+  // ─── SHARE ───────────────────────────────────────────────
+  function shareDoc(id) {
+    const doc = documents.find(d => d.id == id);
+    if (!doc) return;
+    if (navigator.share) {
+      fetch(doc.data).then(r => r.blob()).then(blob => {
+        const file = new File([blob], `${doc.name}.jpg`, { type: 'image/jpeg' });
+        navigator.share({ title: doc.name, files: [file] }).catch(() => showShareOptions());
+      });
+    } else {
+      showShareOptions();
+    }
+  }
+
+  function shareAll() {
+    if (documents.length === 0) { showToast('No documents to share!'); return; }
+    showToast('📤 Use individual share buttons per document');
+  }
+
+  function shareWhatsApp() {
+    const text = encodeURIComponent('Document scanned with Smart Scanner 📄');
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  }
+
+  function shareEmail() {
+    const sub = encodeURIComponent('Scanned Document – Smart Scanner');
+    const body = encodeURIComponent('Please find the scanned document attached.\n\nSent via Smart Scanner app.');
+    window.location.href = `mailto:?subject=${sub}&body=${body}`;
+  }
+
+  function showShareOptions() {
+    showToast('💬 Use WhatsApp/Email buttons below the preview');
+  }
+
+  // ─── UI HELPERS ──────────────────────────────────────────
+  function showLoading() { document.getElementById('loadingOverlay').classList.add('open'); }
+  function hideLoading() { document.getElementById('loadingOverlay').classList.remove('open'); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>
